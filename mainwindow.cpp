@@ -6,11 +6,11 @@
 #include <cassert>
 
 namespace outputf_sheet_names {
-    const QString ducts = "Kanały";
-    const QString fittings = "Kształtki";
-    const QString devices = "Urządzenia";
-    const QString other = "Inne";
-    const QString summary = "Podsumowanie";
+    static const QString ducts = "Kanały";
+    static const QString fittings = "Kształtki";
+    static const QString devices = "Urządzenia";
+    static const QString other = "Inne";
+    static const QString summary = "Podsumowanie";
 
     const int headers_starting_row = 3;
     const int offset_rows = 1;
@@ -67,9 +67,9 @@ void MainWindow::create_output_listing_file()
 
     auto outputf = std::make_unique<xls::XlsxFileManager>("Zestawienie zbiorcze.xlsx");
     outputf->add_sheets({ducts, fittings, devices, other, summary});
-    auto VEfactory_headers = _vefactory->workbook_headers().begin()->headers();
+    auto input_file_headers = _vefactory->workbook_headers().begin()->headers();
     std::set<QString> sheets = {ducts, fittings, devices, other};
-    xls::WorkBookHeaders ofile_hds(std::move(sheets), std::move(VEfactory_headers));
+    xls::WorkBookHeaders ofile_hds(std::move(sheets), std::move(input_file_headers));
     ofile_hds.set_row(headers_starting_row);
     outputf->write(ofile_hds);
 
@@ -111,128 +111,65 @@ void MainWindow::create_output_listing_file()
 
 void MainWindow::create_summary(const std::unique_ptr<xls::XlsxFileManager> &ofile)
 {
-    _sm = std::make_unique<SummaryCreator>(ofile, _vefactory->elements());
+    _sm = std::make_shared<SummaryCreator>(ofile, _vefactory->elements());
 
+    _innerframe = std::make_unique<QFrameDisplayEngine>(_sm);
     make_headers_labels();
     print_ducts_summary();
     print_fittings_summary();
     print_devices_summary();
+    add_buttons_bottom();
 
-    ui->gridLayout->setRowStretch(3, 1);
+    ui->gridLayout->setRowStretch(5, 1);
 
     // create summary sheet in ofile
 }
 
-void MainWindow::print_ducts_summary(const std::vector<QString> &system)    // if there are systems on elements -> make checkboxes on top of the form,
-                                                                            // which will filter summaries by system
+void MainWindow::print_ducts_summary()
 {
-    // ducts:
-    _innerframe = std::make_unique<QFrameDisplayEngine>(new QFrame);
-    _innerframe->setStyleSheet(_dataStyle);
-    _innerframe->setFixedWidth(400);
+    _innerframe->set_ducts_frame();
 
-    _innerframe->add_headers({"nazwa", "długość", "pole", "cena", "", "wartość"});
-    _innerframe->next_row();
-    _innerframe->add_labels({"okrągłe:",
-                             QString::number(_sm->get_circ_ducts_length())+" mb",
-                             QString::number(_sm->get_circ_ducts_area())+" m²",
-                            });
-    _innerframe->add_priceLineEdit();
-    _innerframe->add_area_or_len_ComboBox();
-    _innerframe->add_result_label();
-
-
-    _innerframe->next_row();
-    // ...
-
-//    inner_grid->addWidget(new QLabel("prostokątne:"), 2, 0);
-//    inner_grid->addWidget(new QLabel(QString::number(123/*_sm->get_rect_ducts_len()*/)
-//                                     +" mb"), 2, 1);
-//    inner_grid->addWidget(new QLabel(QString::number(_sm->get_rect_ducts_area())
-//                                     +" m²"), 2, 2);
-
-//    inner_grid->addWidget(new QLabel("RAZEM:"), 3, 0);
-//    inner_grid->addWidget(new QLabel(QString::number(123/*_sm->get_ducts_len()*/)
-//                                     +" mb"), 3, 1);
-//    inner_grid->addWidget(new QLabel(QString::number(_sm->get_ducts_area())
-//                                     +" m²"), 3, 2);
-
-
-    auto gdlay = ui->gridLayout;
-    gdlay->addWidget(_innerframe->get_frame(), 1, 0, Qt::AlignTop);
+    ui->gridLayout->addWidget(_innerframe->ducts_frame(), 1, 0, Qt::AlignTop);
 }
 
 void MainWindow::print_fittings_summary()
 {
-    // fittings:
-    auto frame = new QFrame;
-    frame->setStyleSheet(_dataStyle);
-    auto inner_grid = new QGridLayout;
-    inner_grid->addWidget(new QLabel("okrągłe:"), 0, 0);
-    inner_grid->addWidget(new QLabel(QString::number(_sm->get_circ_fittings_area())
-                                     +" m²"), 0, 1);
-    inner_grid->addWidget(new QLabel("prostokątne:"), 1, 0);
-    inner_grid->addWidget(new QLabel(QString::number(_sm->get_rect_fittings_area())
-                                     +" m²"), 1, 1);
-    inner_grid->addWidget(new QLabel("RAZEM:"), 2, 0);
-    inner_grid->addWidget(new QLabel(QString::number(_sm->get_fittings_area())
-                                     +" m²"), 2, 1);
-    frame->setLayout(inner_grid);
-    auto gdlay = ui->gridLayout;
-    gdlay->addWidget(frame, 3, 0, Qt::AlignTop);
+    _innerframe->set_fittings_frame();
+
+    ui->gridLayout->addWidget(_innerframe->fittings_frame(), 3, 0, Qt::AlignTop);
 }
 
 void MainWindow::print_devices_summary()
 {
-    // devices:
-    auto frame = new QFrame;
-    frame->setStyleSheet(_dataStyle);
-    auto inner_grid = new QGridLayout;
-    int sum = 0, row = 0;
+    _innerframe->set_devices_frame();
 
-    for(auto it = _sm->devices().begin(); it != _sm->devices().end(); ++it)
-    {
-        inner_grid->addWidget(new QLabel(it->first), row, 0);
-        inner_grid->addWidget(new QLabel(QString::number(it->second)
-                                         +" szt."), row, 1);
-        sum += it->second;
-        row++;
-    }
-    inner_grid->addWidget(new QLabel("RAZEM:"), row, 0);
-    inner_grid->addWidget(new QLabel(QString::number(sum)
-                                     +" szt."), row, 1);
-    frame->setLayout(inner_grid);
-    auto gdlay = ui->gridLayout;
-    gdlay->addWidget(frame, 1, 2, Qt::AlignTop);
+    ui->gridLayout->addWidget(_innerframe->devices_frame(), 5, 0, Qt::AlignTop);
 }
 
 void MainWindow::make_headers_labels()
 {
-    QLabel *ducts_header = new QLabel();
-    QLabel *fittings_header = new QLabel();
-    QLabel *devices_header = new QLabel();
-    QLabel *others_header = new QLabel();
-    ducts_header->setText("Kanały");
-    fittings_header->setText("Kształtki");
-    devices_header->setText("Urządzenia");
-    others_header->setText("Inne");
-
-    ducts_header->setStyleSheet(_headerStyle);
-    fittings_header->setStyleSheet(_headerStyle);
-    devices_header->setStyleSheet(_headerStyle);
-    others_header->setStyleSheet(_headerStyle);
-
-    ducts_header->setFixedHeight(30);
-    fittings_header->setFixedHeight(30);
-    devices_header->setFixedHeight(30);
-    others_header->setFixedHeight(30);
+    QLabel *ducts_header = _innerframe->make_frame_header("Kanały");
+    QLabel *fittings_header = _innerframe->make_frame_header("Kształtki");
+    QLabel *devices_header = _innerframe->make_frame_header("Urządzenia");
+    QLabel *others_header = _innerframe->make_frame_header("Inne");
 
     auto gdlay = ui->gridLayout;
 
     gdlay->addWidget(ducts_header, 0, 0, Qt::AlignHCenter|Qt::AlignTop);
     gdlay->addWidget(fittings_header, 2, 0, Qt::AlignHCenter|Qt::AlignTop);
-    gdlay->addWidget(devices_header, 0, 2, Qt::AlignHCenter|Qt::AlignTop);
+    gdlay->addWidget(devices_header, 4, 0, Qt::AlignHCenter|Qt::AlignTop);
     gdlay->addWidget(others_header, 0, 3, Qt::AlignHCenter|Qt::AlignTop);
+}
+
+void MainWindow::add_buttons_bottom()
+{
+    /* uncomment after inner_frame is set properly...
+    QPushButton *pb_insulation_menu = new QPushButton("Izolacja");
+    QPushButton *pb_work_costs_menu = new QPushButton("Robocizna");
+    ui->gridLayout->addWidget(pb_insulation_menu);
+    ui->gridLayout->addWidget(pb_work_costs_menu);
+    */
+
 }
 
 void MainWindow::show_errors(const QString &title, const std::vector<QString> &errors)

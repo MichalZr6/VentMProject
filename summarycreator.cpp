@@ -5,14 +5,7 @@ SummaryCreator::SummaryCreator(const std::unique_ptr<xls::XlsxFileManager> &ofil
 {
     if(ofile && !elems->empty())
     {
-        _fittings_area = 0;
-        _fittings_length = 0;
-        _circ_fittings_area = 0;
-        _circ_fittings_length = 0;
-        _ducts_area = 0;
-        _ducts_length = 0;
-        _circ_ducts_area = 0;
-        _circ_ducts_length = 0;
+        _values.resize(static_cast<int>(GroupType::OTHERS)+static_cast<int>(ValueType::NONE));
         _elements_count = 0;
         _ofile = ofile.get();
         _elems = elems;
@@ -21,12 +14,17 @@ SummaryCreator::SummaryCreator(const std::unique_ptr<xls::XlsxFileManager> &ofil
     }
 }
 
-void SummaryCreator::set_insulation(std::vector<QString> &&systems, const VentInsulation &insulation)
+double SummaryCreator::get(GroupType gt, ValueType vt) const
 {
-    for(auto const &s : systems)
-    {
-        sdfa
-    }
+    Q_ASSERT(gt < GroupType::UNDEFINED && vt <= ValueType::PRICE);
+
+    if(gt == GroupType::DEVICES)
+        return _devices.size();   // you can get only devices' quantity here
+
+    if(gt == GroupType::OTHERS)
+        return _others.size();    // you can get only others' quantity here
+
+    return _values[static_cast<int>(gt)+static_cast<int>(vt)];
 }
 
 void SummaryCreator::count_elements()
@@ -38,11 +36,11 @@ void SummaryCreator::count_elements()
         auto len = e->get_total_length();
         if(e->is_ductal())
         {
-            count_ducts(area, len, e);
+            sum_duct(area, len, e);
         }
         else if(e->is_fitting())
         {
-            count_fittings(area, len, e);
+            sum_fitting(area, len, e);
         }
         else if(e->is_device())
         {
@@ -51,48 +49,61 @@ void SummaryCreator::count_elements()
     }
 }
 
-void SummaryCreator::count_ducts(double area, int length, const std::unique_ptr<VentElem> &e)
+void SummaryCreator::sum_duct(double area, double length, const std::unique_ptr<VentElem> &e)
 {
-    _ducts_area += area;
-    _ducts_length += length;
+    add(GroupType::DUCTS, ValueType::AREA, area);
+    add(GroupType::DUCTS, ValueType::LENGTH, length);
+    add(GroupType::DUCTS, ValueType::QUANTITY, 1);
     if(e->check_type(VentElem::IS_CIRCULAR))
     {
-        _circ_ducts_area += area;
-        _circ_ducts_length += length;
+        add(GroupType::CIRC_DUCTS, ValueType::AREA, area);
+        add(GroupType::CIRC_DUCTS, ValueType::LENGTH, length);
+        add(GroupType::CIRC_DUCTS, ValueType::QUANTITY, 1);
+    }
+    else
+    {
+        add(GroupType::RECT_DUCTS, ValueType::AREA, area);
+        add(GroupType::RECT_DUCTS, ValueType::LENGTH, length);
+        add(GroupType::RECT_DUCTS, ValueType::QUANTITY, 1);
     }
 }
 
-void SummaryCreator::count_fittings(double area, int length, const std::unique_ptr<VentElem> &e)
+void SummaryCreator::sum_fitting(double area, double length, const std::unique_ptr<VentElem> &e)
 {
-    _fittings_area += area;
-    _fittings_length += length;
+    add(GroupType::FITTINGS, ValueType::AREA, area);
+    add(GroupType::FITTINGS, ValueType::LENGTH, length);
+    add(GroupType::FITTINGS, ValueType::QUANTITY, 1);
     if(e->check_type(VentElem::IS_CIRCULAR))
     {
-        _circ_fittings_area += area;
-        _circ_fittings_length += length;
+        add(GroupType::CIRC_FITT, ValueType::AREA, area);
+        add(GroupType::CIRC_FITT, ValueType::LENGTH, length);
+        add(GroupType::CIRC_FITT, ValueType::QUANTITY, 1);
+    }
+    else
+    {
+        add(GroupType::RECT_FITT, ValueType::AREA, area);
+        add(GroupType::RECT_FITT, ValueType::LENGTH, length);
+        add(GroupType::RECT_FITT, ValueType::QUANTITY, 1);
     }
 }
 
 void SummaryCreator::check_for_air_handling_unit(const std::unique_ptr<VentElem> &elem)
 {
     auto name = elem->get_name().toLower();
-    auto type = elem->get_system_type();
     if(name.indexOf(_suppExhUnit) >= 0)
     {
-        if(type == VentElem::AirflowSystemType::SUPP_EXHAUST)
-            _devices[_suppExhUnit +" nawiewno-wywiewna"]++;
-        else if(type == VentElem::AirflowSystemType::SUPPLY)
-            _devices[_suppExhUnit +" nawiewna"]++;
-        else
-            _devices[_suppExhUnit]++;
+        _devices.push_back(elem.get());
     }
-    else if(name.indexOf(_ventilator) >= 0)
+    else if(name.indexOf(_fan) >= 0)
     {
-        if(type == VentElem::AirflowSystemType::SUPPLY)
-            _devices[_ventilator +" nawiewny"]++;
-        else if(type == VentElem::AirflowSystemType::EXHAUST)
-            _devices[_ventilator +" wywiewny"]++;
-        else
-            _devices[_ventilator]++;
+        _devices.push_back(elem.get());
     }
+}
+
+void SummaryCreator::add(GroupType gt, ValueType vt, double value)
+{
+    Q_ASSERT(gt < GroupType::DEVICES && vt < ValueType::PRICE);  // DEVICES, OTHERS and PRICE cannot be set here
+    Q_ASSERT(!(vt == ValueType::QUANTITY && value != 1));
+
+    _values[static_cast<int>(gt)+static_cast<int>(vt)] += value;
 }

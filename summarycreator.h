@@ -8,87 +8,46 @@
 #include "ventelem.h"
 #include "fixingsfasteners.h"
 #include "ventinsulation.h"
+#include "qstrval.h"
+
+enum class GroupType { DUCTS = 10, CIRC_DUCTS = 20, RECT_DUCTS = 30, FITTINGS = 40,
+                       CIRC_FITT = 50, RECT_FITT = 60, DEVICES = 70, OTHERS = 80, UNDEFINED = 90};
 
 class SummaryCreator
 {
 public:
-    SummaryCreator() = default;
+    SummaryCreator() = delete;
     SummaryCreator(const SummaryCreator &other) = delete;
     SummaryCreator(const std::unique_ptr<xls::XlsxFileManager> &ofile,
                    const std::vector<std::unique_ptr<VentElem>> *elems);
 
-    double get_fittings_area() const
-    { return _fittings_area; }
+    double get(GroupType gt, ValueType vt) const;
 
-    double get_rect_fittings_area() const
-    { return _fittings_area - _circ_fittings_area; }
-
-    double get_circ_fittings_area() const
-    { return _circ_fittings_area; }
-
-    double get_ducts_area() const
-    { return _ducts_area; }
-
-    double get_rect_ducts_area() const
-    { return _ducts_area - _circ_ducts_area; }
-
-    double get_circ_ducts_area() const
-    { return _circ_ducts_area; }
-
-    double get_ducts_length() const
-    { return _ducts_length; }
-
-    double get_circ_ducts_length() const
-    { return _circ_ducts_length; }
-
-    double get_circ_fittings_length() const
-    { return _circ_fittings_length; }
-
-    double get_rect_ducts_length() const
-    { return _ducts_length - _circ_ducts_length; }
-
-    double get_rect_fittings_length() const
-    { return _fittings_length - _circ_fittings_length; }
-
-    auto get_elements_count() const
-    { return _elems->size(); }
-
-    auto get_devices_count() const
-    { return _devices.size(); }
-
-    void set_insulation(std::vector<QString> &&systems, const VentInsulation &insulation);
-
-    const std::map<QString, int> &devices()
+    const std::vector<const VentElem *> &devices() const
     {
         return _devices;
     }
 
 private:
     const QString _suppExhUnit = "centrala wentylacyjna";
-    const QString _ventilator = "wentylator";
+    const QString _fan = "wentylator";
+
+    std::vector<double> _values;
     
     xls::XlsxFileManager *_ofile;
     const std::vector<std::unique_ptr<VentElem>> *_elems;
     FixingsFasteners _fixfastmat;
     int _elements_count = -1;
-    std::map<QString, int> _devices;
-
-    double _fittings_area = -1;
-    double _fittings_length = -1;
-    double _ducts_area = -1;
-    double _ducts_length = -1;
-
-    double _circ_fittings_area = -1;
-    double _circ_fittings_length = -1;
-
-    double _circ_ducts_area = -1;
-    double _circ_ducts_length = -1;
+    std::vector<const VentElem *> _devices;
+    std::vector<const VentElem *> _others;
 
     void count_elements();
-    void count_ducts(double area, int length, const std::unique_ptr<VentElem> &e);
-    void count_fittings(double area, int length, const std::unique_ptr<VentElem> &e);
+    void sum_duct(double area, double length, const std::unique_ptr<VentElem> &e);
+    void sum_fitting(double area, double length, const std::unique_ptr<VentElem> &e);
     void check_for_air_handling_unit(const std::unique_ptr<VentElem> &elem);
     // void count_final_elements(const );
+
+    void add(GroupType gt, ValueType vt, double value);
 };
 
 #endif // SUMMARYCREATOR_H

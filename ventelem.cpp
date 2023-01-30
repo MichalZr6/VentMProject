@@ -16,7 +16,7 @@ void VentElem::set_name(const QString &name)
 {
     if(name.isEmpty())
     {
-        set_error("Nazwa nowego elementu jest pusta");
+        set_error(QStringLiteral("Nazwa nowego elementu jest pusta"));
         return;
     }
     _name = name;
@@ -28,16 +28,16 @@ void VentElem::set_system(const QString &system)
 
     if(_airflowtype == AirflowSystemType::UNKNOWN)
     {
-        QString sys = system.toLower();
-        if(sys.contains("cz"))
+        QString sys = _system.toLower();
+        if(sys.contains(QStringLiteral("cz")))
             _airflowtype = AirflowSystemType::FRESH;
-        else if(sys.contains("wyrz"))
+        else if(sys.contains(QStringLiteral("wyrz")))
             _airflowtype = AirflowSystemType::EXHAUST;
-        else if(sys.contains("n") && sys.contains("w"))
+        else if(sys.contains(QLatin1String("n")) && sys.contains(QLatin1String("w")))
             _airflowtype = AirflowSystemType::SUPP_EXHAUST;
-        else if(sys.contains("w"))
+        else if(sys.contains(QLatin1String("w")))
             _airflowtype = AirflowSystemType::INDOOR_EXTRACT;
-        else if(sys.contains("n"))
+        else if(sys.contains(QLatin1String("n")))
             _airflowtype = AirflowSystemType::SUPPLY;
     }
 }
@@ -51,7 +51,7 @@ void VentElem::set_number(int number)
 {
     if(number < 0)
     {
-        set_error("Numer w zestawieniu mniejszy od 0 ?");
+        set_error(QStringLiteral("Numer w zestawieniu mniejszy od 0 ?"));
         return ;
     }
 
@@ -62,7 +62,7 @@ void VentElem::set_quantity(int quantity)
 {
     if(quantity < 0)
     {
-        set_error("Ilość elementów mniejsza od 0 ?");
+        set_error(QStringLiteral("Ilość elementów mniejsza od 0 ?"));
         return ;
     }
     _quantity = quantity;
@@ -102,7 +102,7 @@ void VentElem::set_price(double price)
 {
     if(price < 0)
     {
-        set_error("Cena nie może być niższa niż zero.");
+        set_error(QStringLiteral("Cena nie może być niższa niż zero."));
         return;
     }
     _price = price;
@@ -116,38 +116,38 @@ void VentElem::set_properties()
     bool has_d = has_dimension("d");
     bool has_2times_d = has_dimension("d", 2);
 
-    if(name_contains_OR({"przep", "klapa zwrotna"}))
+    if(name_contains_OR({QStringLiteral("przep"), QStringLiteral("klapa zwrotna")}))
     {
         _properties |= IS_INSULABLE | ElemProperty::IS_THROTTLE;
         if(has_d)
             _properties |= ElemProperty::IS_CIRCULAR;
     }
-    else if(name_contains("rozprężna"))
+    else if(name_contains(QStringLiteral("rozprężna")))
     {
         _properties |= IS_INSULABLE | IS_FITTING;
-        if(name_contains("kratka") || name_contains("anemos"))
+        if(name_contains(QStringLiteral("kratka")) || name_contains(QStringLiteral("anemos")))
             _properties |= IS_FINAL;
     }
-    else if(name_contains_OR({"wyrz", "czer", "kratka", "anemos",
-                             "podstawa dachowa", "cokół", "zawór"}))
+    else if(name_contains_OR({QStringLiteral("wyrz"), QStringLiteral("czer"), QStringLiteral("kratka"), QStringLiteral("anemos"),
+                             QStringLiteral("podstawa dachowa"), QStringLiteral("cokół"), QStringLiteral("zawór")}))
     {
         _properties |= ElemProperty::IS_FINAL;
         if(has_d)
             _properties |= ElemProperty::IS_CIRCULAR;
     }
-    else if(name_contains("tłum"))
+    else if(name_contains(QStringLiteral("tłum")))
     {
         _properties |= ElemProperty::IS_INSULABLE;
         if(has_d)
             _properties |= IS_CIRCULAR;
     }
-    else if(name_contains_OR({"kanał ", "przewód "}))
+    else if(name_contains_OR({QStringLiteral("kanał "), QStringLiteral("przewód ")}))
     {
         _properties |= ElemProperty::IS_DUCTAL | ElemProperty::IS_INSULABLE;
         if(has_d)
             _properties |= ElemProperty::IS_CIRCULAR;
     }
-    else if(name_contains("zaślepka"))
+    else if(name_contains(QStringLiteral("zaślepka")))
     {
         _properties |= IS_FITTING | IS_INSULABLE;
         if(has_d)
@@ -159,31 +159,31 @@ void VentElem::set_properties()
         if(has_d)
             _properties |= IS_CIRCULAR;
     }
-    else if(name_contains("króciec"))
+    else if(name_contains(QStringLiteral("króciec")))
     {
         if(has_d)
             _properties |= IS_CIRCULAR;
     }
-    else if(name_contains_OR({"trójnik", "redukcja", "odsadzka", "czwórnik"}))
+    else if(name_contains_OR({QStringLiteral("trójnik"), QStringLiteral("redukcja"), QStringLiteral("odsadzka"), QStringLiteral("czwórnik")}))
     {
         _properties.setFlag(ElemProperty::IS_FITTING);
         _properties.setFlag(ElemProperty::IS_INSULABLE);
         if(has_2times_d)
             _properties |= IS_CIRCULAR;
     }
-    else if(name_contains_OR({"muf", "nypel", "nyplowa"}))
+    else if(name_contains_OR({QStringLiteral("muf"), QStringLiteral("nypel"), QStringLiteral("nyplowa")}))
     {
         _properties |= VentElem::ElemProperty::IS_FITTING | VentElem::ElemProperty::IS_INSULABLE;
         if(has_d)
             _properties |= IS_CIRCULAR;
     }
-    else if(name_contains("przejście koło/prost"))
+    else if(name_contains(QStringLiteral("przejście koło/prost")))
     {
         _properties |= IS_FITTING | IS_INSULABLE;
     }
-    else if(name_contains_OR({"centrala", "wentylator", "nagrzewnica",
-                             "kaseta",
-                             "agregat", "chłodnica", "przeciwpoż"}))
+    else if(name_contains_OR({QStringLiteral("centrala"), QStringLiteral("wentylator"), QStringLiteral("nagrzewnica"),
+                             QStringLiteral("kaseta"),
+                             QStringLiteral("agregat"), QStringLiteral("chłodnica"), QStringLiteral("przeciwpoż")}))
     {
         _properties |= IS_DEVICE;
     }
@@ -224,12 +224,24 @@ void VentElem::set_init_values(std::vector<QVariant> &&values)
 
 void VentElem::set_proper_length()
 {
+    /*
+    if(_system == "N10" && _index == 16)
+        qDebug() << "";*/
     if(is_final() || is_device())
         _length = 0;
     else if(has_dimension("alfa"))
     {
         if(check_type(IS_CIRCULAR))
-            _length = 3.14*(1.5*_dimensions["d"]*_dimensions["alfa"]/90.0)/4.0;
+        {
+            for(auto const &dim : _dimensions)
+            {
+                if(dim.first[0] == 'd')
+                {
+                    _length = 3.14*(1.5*dim.second*_dimensions["alfa"]/90.0)/4.0;
+                    return;
+                }
+            }
+        }
         else
         {
             int a = _dimensions["a"];
@@ -237,6 +249,11 @@ void VentElem::set_proper_length()
             _length = 3.14*(_dimensions["r"]+std::max(a, b)*_dimensions["alfa"]/90.0)/4.0;
         }
     }
+}
+
+void VentElem::set_insulation(VentInsulation *insulation)
+{
+    _insulation = insulation;
 }
 
 std::vector<QVariant> VentElem::get_initial_values() const

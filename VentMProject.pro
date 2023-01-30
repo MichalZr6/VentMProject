@@ -18,10 +18,12 @@ INCLUDEPATH += $PWD/../myIncludes/
 SOURCES += \
     ../myIncludes/errorsandwarningslogger.cpp \
     fixingsfasteners.cpp \
+    generalfunctions.cpp \
     main.cpp \
     mainwindow.cpp \
     mountingelements.cpp \
     qframedisplayengine.cpp \
+    qstrval.cpp \
     rowheaders.cpp \
     slings.cpp \
     summarycreator.cpp \
@@ -33,15 +35,19 @@ SOURCES += \
     ../myIncludes/Functions.cpp \
     ../myIncludes/Price.cpp \
     ../myIncludes/SimplExpr.cpp \
+    ventsystem.cpp \
+    ventsystemscontainer.cpp \
     vmoutputfilemngr.cpp \
     xlsxfilemanager.cpp
 
 HEADERS += \
     ../myIncludes/errorsandwarningslogger.h \
     fixingsfasteners.h \
+    generalfunctions.h \
     mainwindow.h \
     mountingelements.h \
     qframedisplayengine.h \
+    qstrval.h \
     rowheaders.h \
     slings.h \
     summarycreator.h \
@@ -54,6 +60,8 @@ HEADERS += \
     ../myIncludes/Functions.h \
     ../myIncludes/Price.h \
     ../myIncludes/SimplExpr.h \
+    ventsystem.h \
+    ventsystemscontainer.h \
     vmoutputfilemngr.h \
     xlsxfilemanager.h
 

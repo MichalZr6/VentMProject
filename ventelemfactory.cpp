@@ -6,7 +6,7 @@ VentElemFactory::VentElemFactory(const std::filesystem::path &path_to_file_listi
     basic_file_check();
 }
 
-const std::vector<std::unique_ptr<VentElem>> *VentElemFactory::elements() const
+std::vector<std::unique_ptr<VentElem> > *VentElemFactory::elements()
 {
     return &_elements;
 }
@@ -15,7 +15,10 @@ void VentElemFactory::add(std::unique_ptr<VentElem> &&ve)
 {
     ve->set_properties();
     if(ve->is_valid())
+    {
+        _systems.add(ve.get());
         _elements.push_back(std::move(ve));
+    }
     else
     {
         if(!ve->is_empty())

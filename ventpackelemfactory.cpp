@@ -265,7 +265,7 @@ void VentPackElemFactory::set_elem_dimensions(int &col, std::unique_ptr<VentElem
         if(v.isEmpty())
             return ;
 
-        if(v.endsWith("="))
+        if(v.endsWith(QLatin1String("=")))
         {
             v.chop(1);
             if(_curr_row_values[col+1].isValid())

@@ -7,7 +7,7 @@ class VentDuckt : public VentElem
 {
 public:
     VentDuckt();
-    VentDuckt(int a, int b, int length, std::unique_ptr<VentInsulation> insulation = nullptr);
+    VentDuckt(int a, int b, int length, VentInsulation *insulation = nullptr);
 
 };
 

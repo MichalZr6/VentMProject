@@ -48,13 +48,18 @@ public:
     void set_init_values(QString &&val);
     void set_init_values(std::vector<QVariant> &&values);
     void set_proper_length();
+    void set_insulation(VentInsulation *insulation);
 
     AirflowSystemType get_system_type() const
     { return _airflowtype; }
     uint16_t get_index() const
     { return _index; }
     double get_area() const
-    { return _area; }
+    { return _area; }    
+    auto get_quantity() const
+    { return _quantity; }
+    QString get_system_name() const
+    { return _system; }
     double get_length() const
     { return _length / 1000.0; }
     QString get_name() const
@@ -64,6 +69,8 @@ public:
     double get_total_length() const
     { return _length * _quantity / 1000.0; }
     std::vector<QVariant> get_initial_values() const;
+    double get_price() const
+    { return _price; }
 
     bool is_ductal() const;
     bool is_fitting() const;
@@ -99,7 +106,7 @@ protected:
     AirflowSystemType _airflowtype = AirflowSystemType::UNKNOWN;
     std::vector<QVariant> _initial_values;
 
-    std::unique_ptr<VentInsulation> _insulation = nullptr;
+    VentInsulation *_insulation = nullptr;
 
     bool name_contains(const QString &word) const;
     bool name_contains_OR(const std::vector<QString> &words) const;
