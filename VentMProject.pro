@@ -2,8 +2,6 @@ QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-CONFIG += c++11
-
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
@@ -12,6 +10,9 @@ QXLSX_PARENTPATH=../QXlsx/QXlsx/         # current QXlsx path is . (. means curr
 QXLSX_HEADERPATH=../QXlsx/QXlsx/header/  # current QXlsx header path is ./header/
 QXLSX_SOURCEPATH=../QXlsx/QXlsx/source/  # current QXlsx source path is ./source/
 include(../QXlsx/QXlsx/QXlsx.pri)
+
+CONFIG -= c++14     #disable this as QXlsx.pri above has it
+CONFIG += c++2a
 
 INCLUDEPATH += $PWD/../myIncludes/
 
@@ -24,7 +25,6 @@ SOURCES += \
     mountingelements.cpp \
     qframedisplayengine.cpp \
     qstrval.cpp \
-    rowheaders.cpp \
     slings.cpp \
     summarycreator.cpp \
     ventduckt.cpp \
@@ -38,6 +38,8 @@ SOURCES += \
     ventsystem.cpp \
     ventsystemscontainer.cpp \
     vmoutputfilemngr.cpp \
+    vmpoutputfileman.cpp \
+    workbookheaders.cpp \
     xlsxfilemanager.cpp
 
 HEADERS += \
@@ -48,7 +50,6 @@ HEADERS += \
     mountingelements.h \
     qframedisplayengine.h \
     qstrval.h \
-    rowheaders.h \
     slings.h \
     summarycreator.h \
     ventduckt.h \
@@ -63,6 +64,8 @@ HEADERS += \
     ventsystem.h \
     ventsystemscontainer.h \
     vmoutputfilemngr.h \
+    vmpoutputfileman.h \
+    workbookheaders.h \
     xlsxfilemanager.h
 
 FORMS += \
