@@ -46,7 +46,7 @@ private:
 
     void process_xls_worksheet_data();
     void process_xls_row_data();
-    void set_vent_elem(const QString &header, int &col, std::unique_ptr<VentElem> &ve);
+    void set_vent_elem(const xls::Header &header, int &col, std::unique_ptr<VentElem> &ve);
     void set_elem_dimensions(int &col, std::unique_ptr<VentElem> &ve);
 
     //void find_curr_system_type();

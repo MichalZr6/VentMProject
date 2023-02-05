@@ -3,6 +3,7 @@
 
 #include <QString>
 #include <array>
+#include <limits>
 
 enum class ValueType { AREA, LENGTH, QUANTITY, PRICE, NONE};
 
@@ -16,19 +17,31 @@ public:
 
     static double to_dbl(const QString &val)
     {
+        if(val.isEmpty())
+            return 0;
+
         auto v = val;
         for(int i = 0; i < 5; ++i)
         {
             if(val.contains(units[i]))
                 v.chop(units[i].size());
         }
-        return v.simplified().toDouble();
+        v = v.simplified();
+        v.replace(" ", "");
+        auto ret = v.toDouble();
+        if(ret < DBL_MAX && ret > DBL_MIN)
+            return ret;
+        else
+            return 0;
     }
 
     virtual operator QString()
     {
         if(_vt == ValueType::NONE)
             return QSfromDbl(_dblval);
+
+        if(_vt == ValueType::QUANTITY)
+            return QSfromInt(_dblval) +" "+ units[static_cast<int>(_vt)];
         else
             return QSfromDbl(_dblval) +" "+ units[static_cast<int>(_vt)];
     }

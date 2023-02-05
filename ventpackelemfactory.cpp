@@ -71,9 +71,9 @@ void VentPackElemFactory::process_xls_worksheet_data()
         {
             QXlsx::Cell *cell = _xlsfile->cellAt(_curr_row, c);
             if(cell != NULL)
-                _curr_row_values.push_back(cell->readValue());
+                _curr_row_values.emplace_back(cell->readValue());
         }
-        if(_headers.size(_curr_wsheet->sheetName()) == 0)
+        if(_headers.empty())
         {
             find_headers();
             //find_curr_system_type();          // if headers were not found yet; means we also can search for system type -> system type is later read from elements
@@ -144,10 +144,10 @@ void VentPackElemFactory::find_headers()
                             break;
                         }
                         else
-                            _headers.add(std::move(header));
+                            _headers.add(shname, std::move(header));
                     }
                 }
-                _headers.add(std::move(header));
+                _headers.add(shname, std::move(header));
             }
         }
     }
@@ -183,21 +183,20 @@ void VentPackElemFactory::process_xls_row_data()
     auto ve = std::make_unique<VentElem>();
     //ve->set_airflow_sys_type(_curr_airflow_sys_type);
     auto shname = _curr_wsheet->sheetName();
-    _headers.select_sheet(shname);
 
     for(int col = 0; col < _curr_row_values.size(); ++col)
     {
         if(!_curr_row_values[col].isValid())
             continue;
 
-        if(_headers.size() == 0)
+        if(_headers.size(shname) == 0)
         {
             qDebug() << "[process_xls_row_data]: none of defined headers was found (WorkBookHeaders) for sheet = " << shname;
             return ;
         }
         QXlsx::CellReference cref = {-1, col+1};
-        auto header = _headers.find(cref);
-        if(header != _headers.get_headers().end())
+        auto header = _headers.find(cref, shname);
+        if(header)
             set_vent_elem(*header, col, ve);
         else
         {
@@ -211,7 +210,7 @@ void VentPackElemFactory::process_xls_row_data()
     VentElemFactory::add(std::move(ve));
 }
 
-void VentPackElemFactory::set_vent_elem(const QString &header, int &col, std::unique_ptr<VentElem> &ve)
+void VentPackElemFactory::set_vent_elem(const xls::Header &header, int &col, std::unique_ptr<VentElem> &ve)
 {
     if(header == vph::system)
         ve->set_system(_curr_row_values[col].value<QString>());

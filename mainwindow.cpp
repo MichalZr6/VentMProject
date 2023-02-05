@@ -5,17 +5,6 @@
 #include <chrono>
 #include <cassert>
 
-namespace outputf_sheet_names {
-    static const QString ducts = "Kanały";
-    static const QString fittings = "Kształtki";
-    static const QString devices = "Urządzenia";
-    static const QString other = "Inne";
-    static const QString summary = "Podsumowanie";
-
-    const int headers_starting_row = 3;
-    const int offset_rows = 1;
-}
-
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -63,53 +52,21 @@ std::unique_ptr<VentElemFactory> MainWindow::create_VentElemFactory(const std::f
 
 void MainWindow::create_output_listing_file()
 {
-    using namespace outputf_sheet_names;
+    auto outputfile = std::make_unique<VMPOutputFileMan>("Zestawienie zbiorcze.xlsx");
 
-    auto outputf = std::make_unique<xls::XlsxFileManager>("Zestawienie zbiorcze.xlsx");
-    outputf->add_sheets({ducts, fittings, devices, other, summary});
-    auto input_file_headers = _vefactory->workbook_headers().begin()->headers();
-    std::set<QString> sheets = {ducts, fittings, devices, other};
-    xls::WorkBookHeaders ofile_hds(std::move(sheets), std::move(input_file_headers));
-    ofile_hds.set_row(headers_starting_row);
-    outputf->write(ofile_hds);
+    auto input_file_headers = _vefactory->workbook_headers();
 
-    // int name_col = ofile_hds.find(vph::name)->col();
-    int first_col = ofile_hds.find(vph::system)->col();
+    outputfile->set_headers(std::move(input_file_headers));
 
-    auto elems = _vefactory->elements();
-    QString sheet_name;
-    std::map<QString, int> sheet_curr_row =
-        {{ ducts, headers_starting_row + 1 +offset_rows},
-        { fittings, headers_starting_row + 1 + offset_rows},
-        { devices, headers_starting_row + 1 + offset_rows},
-        { other, headers_starting_row + 1 + offset_rows},
-        { summary, 2}};
+    outputfile->write_elements(_vefactory->elements());
 
-    for(auto it = elems->begin(); it != elems->end(); ++it)
-    {
-        if(it->get()->check_type(VentElem::IS_FITTING))
-            sheet_name = fittings;
-        else if(it->get()->check_type(VentElem::IS_DUCTAL))
-            sheet_name = ducts;
-        else if(it->get()->check_type(VentElem::IS_DEVICE))
-            sheet_name = devices;
-        else
-            sheet_name = other;
+    if(outputfile->hasErrors())
+        show_errors("Generowanie pliku wynikowego zakończyło się błędami", outputfile->getErrors());
 
-        //qDebug() << "element: " << it->get()->get_name();
-
-        outputf->set_curr_sheet(sheet_name);
-        outputf->write(it->get()->get_initial_values(),
-                       {sheet_curr_row[sheet_name]++, first_col});     // {start_row, start_col}
-    }
-
-    if(outputf->hasErrors())
-        show_errors("Generowanie pliku wynikowego zakończyło się błędami", outputf->getErrors());
-
-    _outputfile = std::move(outputf);
+    _outputfile = std::move(outputfile);
 }
 
-void MainWindow::create_summary(const std::unique_ptr<xls::XlsxFileManager> &ofile)
+void MainWindow::create_summary(const std::unique_ptr<VMPOutputFileMan> &ofile)
 {
     _sm = std::make_shared<SummaryCreator>(ofile, _vefactory->elements());
 

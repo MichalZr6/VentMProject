@@ -255,7 +255,7 @@ void QFrameDisplayEngine::set_result_label_text(QGridLayout *grid, int row, int 
     {
         auto price_LE = static_cast<QLineEdit *>(get_item(grid, row, _priceLE_name));
         auto price = price_LE->text().toDouble();
-        if(price < 0 || price >= 1000000)
+        if(price < 0 || price > DBL_MAX)
         {
             res_lab->setText("0");
             return ;
@@ -282,7 +282,7 @@ void QFrameDisplayEngine::set_result_label_text(QGridLayout *grid, int row)
     {
         auto price_LE = static_cast<QLineEdit *>(get_item(grid, row, _priceLE_name));
         auto price = price_LE->text().toDouble();
-        if(price <= 0 || price >= 10000000)
+        if(price <= 0 || price > DBL_MAX)
         {
             res_lab->setText("0");
             return ;
@@ -308,10 +308,11 @@ void QFrameDisplayEngine::set_total_value_label(QGridLayout *grid)
         }
     }
     item = grid->itemAtPosition(rows-1, cols-1);
+    auto total_str = QStrVal(total, ValueType::PRICE);
     if(item)
-        qobject_cast<QLabel *>(item->widget())->setText(QStrVal(total));
+        qobject_cast<QLabel *>(item->widget())->setText(total_str);
     else
-        grid->addWidget(new QLabel(QStrVal(total)), rows-1, cols-1);
+        grid->addWidget(new QLabel(total_str), rows-1, cols-1);
 }
 
 void QFrameDisplayEngine::prepare_frame(GroupType t)

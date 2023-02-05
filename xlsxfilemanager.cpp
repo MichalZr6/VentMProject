@@ -5,7 +5,7 @@ namespace xls
 
 XlsxFileManager::XlsxFileManager()
 {
-    _output_file = std::make_unique<QXlsx::Document>();
+    output_file = std::make_unique<QXlsx::Document>();
     init_formats();
 }
 
@@ -18,7 +18,7 @@ XlsxFileManager::XlsxFileManager(QString fname)
 void XlsxFileManager::set_headers(const std::vector<Header> &headers, const QString &sheet)
 {
     set_curr_sheet(sheet);
-    _headers.set({sheet, headers});
+    _headers[sheet] = headers;
 }
 
 void XlsxFileManager::set_headers(const std::vector<Header> &headers, const std::set<QString> &sheets)
@@ -64,11 +64,11 @@ void XlsxFileManager::set_filename(QString name)
     _fname = name;
 }
 
-void XlsxFileManager::add_sheets(const std::vector<QString> &names)
+void XlsxFileManager::add_sheets(const std::set<QString> &names)
 {
     if(names.empty() && getSheetNames().empty())
     {
-       _output_file->workbook()->addSheet(DEF_SHEET_NAME);
+       output_file->workbook()->addSheet(DEF_SHEET_NAME);
         return;
     }
 
@@ -76,7 +76,7 @@ void XlsxFileManager::add_sheets(const std::vector<QString> &names)
     {
         if(n.isEmpty())
             continue;
-        if(_output_file->workbook()->addSheet(n) == 0)
+        if(output_file->workbook()->addSheet(n) == 0)
         {
             log_error("[XlsxFileManager::add_sheets]: Błąd dodawania arkusza o nazwie: "+ n);
             return ;
@@ -86,17 +86,17 @@ void XlsxFileManager::add_sheets(const std::vector<QString> &names)
 
 bool XlsxFileManager::save()
 {
-    Q_ASSERT(_output_file);
+    Q_ASSERT(output_file);
 
     autosize_columns();
 
-    return _output_file->saveAs(_fname);
+    return output_file->saveAs(_fname);
 }
 
 void XlsxFileManager::close()
 {
     _no_autosize_cols.clear();
-    _output_file.reset();
+    output_file.reset();
     _headers.clear();
     _formats.clear();
     _fname = "ProgramOutput.xlsx";
@@ -135,7 +135,7 @@ const QXlsx::Format &XlsxFileManager::get_fmt(fmtType type) const
 
 QXlsx::Format XlsxFileManager::get_col_fmt(int col) const
 {
-    return _output_file->columnFormat(col);
+    return output_file->columnFormat(col);
 }
 
 XlsxFileManager::~XlsxFileManager()
@@ -169,12 +169,12 @@ void XlsxFileManager::set_default_sheet()
 // returns {row, col}
 QXlsx::CellReference XlsxFileManager::find_text(const QString &text) const
 {
-    auto sh = _output_file->sheetNames();
+    auto sh = output_file->sheetNames();
     int maxrow = -1;
     int maxcol = -1;
     for(auto const & s : sh)
     {
-        auto currsheet = (QXlsx::Worksheet*) _output_file->sheet(s);
+        auto currsheet = (QXlsx::Worksheet*) output_file->sheet(s);
         if(currsheet == NULL)
             continue;
 
@@ -184,7 +184,7 @@ QXlsx::CellReference XlsxFileManager::find_text(const QString &text) const
         {
             for(int c = 0; c < maxcol; ++c)
             {
-                auto cell = _output_file->cellAt(r, c);
+                auto cell = output_file->cellAt(r, c);
                 if(!cell)
                     continue;
 
@@ -198,7 +198,7 @@ QXlsx::CellReference XlsxFileManager::find_text(const QString &text) const
 
 QStringList XlsxFileManager::getSheetNames() const
 {
-    return _output_file->sheetNames();
+    return output_file->sheetNames();
 }
 
 void XlsxFileManager::write(const std::vector<QVariant> &row_values, const QXlsx::CellReference &startAddr)
@@ -224,32 +224,32 @@ void XlsxFileManager::write(const std::vector<QVariant> &row_values, int row, in
         if(check)
         {
             auto idx = val.toString().indexOf('.');
-            _output_file->autosizeColumnWidth(c);
+            output_file->autosizeColumnWidth(c);
             if(idx < 0)
-                _output_file->write(row, c, val.toInt(), get_fmt(fmtType::INTEGER));
+                output_file->write(row, c, val.toInt(), get_fmt(fmtType::INTEGER));
             else
             {
                 QXlsx::Format fmt;
                 fmt.setNumberFormatIndex(2);
-                _output_file->write(row, c, val.toDouble(), get_fmt(fmtType::DBL_PREC2PL));
+                output_file->write(row, c, val.toDouble(), get_fmt(fmtType::DBL_PREC2PL));
             }
 
             continue;
         }
 
-        _output_file->write(row, c, val, get_fmt(fmtType::STANDARD));
+        output_file->write(row, c, val, get_fmt(fmtType::STANDARD));
         if(val.toString().size() < 20)
             // will be autosized
             continue;
         else if(val.toString().size() > 30)
             // very long text:
-            _output_file->setColumnWidth(c, 40);
+            output_file->setColumnWidth(c, 40);
         else
             //long text:
-            _output_file->setColumnWidth(c, 20);
+            output_file->setColumnWidth(c, 20);
 
         // col width is set, autosize will break it
-        _no_autosize_cols[_output_file->currentWorksheet()].insert(c);
+        _no_autosize_cols[output_file->currentWorksheet()].insert(c);
     }
 }
 
@@ -258,10 +258,10 @@ void XlsxFileManager::write(const WorkBookHeaders &headers)
     set_headers(headers);
     for(auto const &sh : headers)
     {
-        _output_file->selectSheet(sh.sheet());
+        output_file->selectSheet(sh.first);
         int start_merge_idx = -1;
         int end_merge_idx = -1;
-        auto headers = sh.headers();
+        auto headers = sh.second;
         for(int i = 0; i < headers.size(); ++i)
         {
             if(i != 0)
@@ -274,13 +274,13 @@ void XlsxFileManager::write(const WorkBookHeaders &headers)
                         end_merge_idx = i;
                 }
             }
-            _output_file->write(headers[i].row(), headers[i].col(), headers[i].text, get_fmt(fmtType::STANDARD));
+            output_file->write(headers[i].row(), headers[i].col(), headers[i].text, get_fmt(fmtType::STANDARD));
         }
         if(start_merge_idx >= 0)
         {
             const auto & hs = headers[start_merge_idx];
             const auto & he = headers[end_merge_idx];
-            _output_file->mergeCells( { hs.row(), hs.col(), he.row(), he.col() });
+            output_file->mergeCells( { hs.row(), hs.col(), he.row(), he.col() });
         }
     }
 }
@@ -290,27 +290,22 @@ void XlsxFileManager::autosize_columns()
     int maxcols, maxrows;
     for(auto const &sh : getSheetNames())
     {
-        _output_file->selectSheet(sh);
-        _output_file->currentWorksheet()->getFullCells(&maxrows, &maxcols);
+        output_file->selectSheet(sh);
+        output_file->currentWorksheet()->getFullCells(&maxrows, &maxcols);
         for(int c = 0; c < maxcols; ++c)
         {
-            if(_no_autosize_cols[_output_file->currentWorksheet()].find(c)
-                    == _no_autosize_cols[_output_file->currentWorksheet()].end())
-                _output_file->autosizeColumnWidth(c);
+            if(_no_autosize_cols[output_file->currentWorksheet()].find(c)
+                    == _no_autosize_cols[output_file->currentWorksheet()].end())
+                output_file->autosizeColumnWidth(c);
         }
     }
 }
 
 bool XlsxFileManager::set_curr_sheet(const QString &sheet_name)
 {
-    if(!_output_file->selectSheet(sheet_name))
+    if(!output_file->selectSheet(sheet_name))
     {
         log_error("[OutputXlsxGenerator::set_curr_sheet]: Nieprawidłowa nazwa arkusza: "+ sheet_name);
-        return false;
-    }
-    if(!_headers.select_sheet(sheet_name))
-    {
-        log_error("[OutputXlsxGenerator::set_curr_sheet]: Nieprawidłowa nazwa arkusza: "+ sheet_name +" dla parametru _headers");
         return false;
     }
     return true;
@@ -318,7 +313,7 @@ bool XlsxFileManager::set_curr_sheet(const QString &sheet_name)
 
 void XlsxFileManager::set_col_fmt(int col, const QXlsx::Format &fmt)
 {
-    _output_file->setColumnFormat(col, fmt);
+    output_file->setColumnFormat(col, fmt);
 }
 
 void XlsxFileManager::set_col_fmt(int col, fmtType type)

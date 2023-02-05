@@ -9,7 +9,6 @@
 
 #include "qframedisplayengine.h"
 #include "ventpackelemfactory.h"
-#include "xlsxfilemanager.h"
 #include "summarycreator.h"
 
 QT_BEGIN_NAMESPACE
@@ -27,8 +26,10 @@ public:
 private:
     Ui::MainWindow *ui;
 
+
+
     std::unique_ptr<VentElemFactory> _vefactory;
-    std::unique_ptr<xls::XlsxFileManager> _outputfile;
+    std::unique_ptr<VMPOutputFileMan> _outputfile;
     std::shared_ptr<SummaryCreator> _sm;
     std::unique_ptr<QFrameDisplayEngine> _innerframe;
 
@@ -36,7 +37,7 @@ private:
                                                             VentElemFileType type);
 
     void create_output_listing_file();
-    void create_summary(const std::unique_ptr<xls::XlsxFileManager> &ofile);
+    void create_summary(const std::unique_ptr<VMPOutputFileMan> &ofile);
 
     void print_ducts_summary();
     void print_fittings_summary();

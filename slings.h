@@ -13,7 +13,7 @@ public:
 
 private:
 
-    std::map<int, int> _circ_brackets;    // diameter / quantity
+    std::map<int, int> _circ_brackets;    // diameter / quantity - maybe a struct ?
     int _rails_length;
     std::shared_ptr<MountingElements> _mntelems;
 };

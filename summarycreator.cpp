@@ -1,11 +1,11 @@
 #include "summarycreator.h"
 
-SummaryCreator::SummaryCreator(const std::unique_ptr<xls::XlsxFileManager> &ofile,
+SummaryCreator::SummaryCreator(const std::unique_ptr<VMPOutputFileMan> &ofile,
                                const std::vector<std::unique_ptr<VentElem> > *elems)
 {
     if(ofile && !elems->empty())
     {
-        _values.resize(static_cast<int>(GroupType::OTHERS)+static_cast<int>(ValueType::NONE));
+        _values.resize(static_cast<int>(GroupType::UNDEFINED)+static_cast<int>(ValueType::NONE));
         _elements_count = 0;
         _ofile = ofile.get();
         _elems = elems;
@@ -35,21 +35,17 @@ void SummaryCreator::count_elements()
         auto area = e->get_total_area();
         auto len = e->get_total_length();
         if(e->is_ductal())
-        {
-            sum_duct(area, len, e);
-        }
+            add_duct(area, len, e);
         else if(e->is_fitting())
-        {
-            sum_fitting(area, len, e);
-        }
+            add_fitting(area, len, e);
         else if(e->is_device())
-        {
             check_for_air_handling_unit(e);
-        }
+        else if(e->is_final())
+            add_final(e);
     }
 }
 
-void SummaryCreator::sum_duct(double area, double length, const std::unique_ptr<VentElem> &e)
+void SummaryCreator::add_duct(double area, double length, const std::unique_ptr<VentElem> &e)
 {
     add(GroupType::DUCTS, ValueType::AREA, area);
     add(GroupType::DUCTS, ValueType::LENGTH, length);
@@ -68,7 +64,7 @@ void SummaryCreator::sum_duct(double area, double length, const std::unique_ptr<
     }
 }
 
-void SummaryCreator::sum_fitting(double area, double length, const std::unique_ptr<VentElem> &e)
+void SummaryCreator::add_fitting(double area, double length, const std::unique_ptr<VentElem> &e)
 {
     add(GroupType::FITTINGS, ValueType::AREA, area);
     add(GroupType::FITTINGS, ValueType::LENGTH, length);
@@ -87,17 +83,22 @@ void SummaryCreator::sum_fitting(double area, double length, const std::unique_p
     }
 }
 
-void SummaryCreator::check_for_air_handling_unit(const std::unique_ptr<VentElem> &elem)
+void SummaryCreator::check_for_air_handling_unit(const std::unique_ptr<VentElem> &e)
 {
-    auto name = elem->get_name().toLower();
+    auto name = e->get_name().toLower();
     if(name.indexOf(_suppExhUnit) >= 0)
     {
-        _devices.push_back(elem.get());
+        _devices.push_back(e.get());
     }
     else if(name.indexOf(_fan) >= 0)
     {
-        _devices.push_back(elem.get());
+        _devices.push_back(e.get());
     }
+}
+
+void SummaryCreator::add_final(const std::unique_ptr<VentElem> &e)
+{
+    _finals.push_back(e.get());
 }
 
 void SummaryCreator::add(GroupType gt, ValueType vt, double value)

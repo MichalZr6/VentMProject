@@ -3,7 +3,7 @@
 
 #include "../myIncludes/Functions.h"
 
-#include "rowheaders.h"
+#include "workbookheaders.h"
 //QXlsx:
 #include "xlsxdocument.h"
 #include "xlsxworkbook.h"
@@ -25,14 +25,15 @@ public:
     enum class fmtType { STANDARD, INTEGER, DBL_PREC2PL, LONG_TEXT };
     XlsxFileManager();
     XlsxFileManager(QString fname);
-    void set_headers(const std::vector<Header> &headers, const QString &sheet);
-    void set_headers(const std::vector<Header> &headers, const std::set<QString> &sheets = {});
-    void set_headers(WorkBookHeaders &&wb_headers);
-    void set_headers(const WorkBookHeaders &wb_headers);
+
+    virtual void set_headers(const std::vector<Header> &headers, const QString &sheet);
+    virtual void set_headers(const std::vector<Header> &headers, const std::set<QString> &sheets = {});
+    virtual void set_headers(WorkBookHeaders &&wb_headers);
+    virtual void set_headers(const WorkBookHeaders &wb_headers);
 
     void set_filename(QString name);
     void set_filepath(QString path);
-    virtual void add_sheets(const std::vector<QString> &names);
+    virtual void add_sheets(const std::set<QString> &names);
 
     virtual bool set_curr_sheet(const QString &sheet_name);
     void set_col_fmt(int col, const QXlsx::Format &fmt);
@@ -56,11 +57,12 @@ public:
     { return _fname; }
     ~XlsxFileManager();
 
+    std::shared_ptr<QXlsx::Document> output_file;
+
 private:
     std::map<fmtType, QXlsx::Format> _formats;
     std::map<QXlsx::Worksheet*, std::unordered_set<int>> _no_autosize_cols;
     WorkBookHeaders _headers;
-    std::shared_ptr<QXlsx::Document> _output_file;
     QString _fname = "ProgramOutput.xlsx";
 
     void init_formats();
